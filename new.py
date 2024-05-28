@@ -2,56 +2,55 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Constants
-wavelength = 633e-9  # Wavelength of light in meters (example: 633nm)
-theta = np.pi / 4  # Rotation angle between the two DOEs in radians
+wavelength = 633e-9  # Wavelength of light in meters (example: 633 nm)
+f1 = 0.1  # Focal length of DOE 1 (100 mm)
+f2 = 0.15  # Focal length of DOE 2 (150 mm)
+theta = np.pi / 4  # Rotation angle for DOE 2 (45 degrees)
 
-# Function to create an asymmetric Fresnel Zone Plate (FZP)
-def create_asymmetric_fzp(radius, wavelength, focal_length, skew_factor):
-    x = np.linspace(-radius, radius, 500)
-    y = np.linspace(-radius, radius, 500)
-    X, Y = np.meshgrid(x, y)
-    R = np.sqrt((X + skew_factor)**2 + Y**2)
-    phase = np.mod(2 * np.pi / wavelength * (R**2 / (2 * focal_length)), 2 * np.pi)
-    return phase
+# Grid
+x = np.linspace(-0.01, 0.01, 500)
+y = np.linspace(-0.01, 0.01, 500)
+X, Y = np.meshgrid(x, y)
+R = np.sqrt(X**2 + Y**2)
+Phi = np.arctan2(Y, X)
 
-# Create asymmetric DOE 1 and DOE 2
-radius = 0.01  # 10 mm radius
-focal_length1 = 0.1  # 100 mm focal length
-focal_length2 = 0.15  # 150 mm focal length
-skew_factor1 = 0.005  # Skew factor for DOE 1
-skew_factor2 = -0.005  # Skew factor for DOE 2
+# Asymmetric Phase profiles
+Phi1 = (np.pi * (X**2 + 2*Y**2)) / (wavelength * f1)
+Phi2 = (np.pi * (2*X**2 + Y**2)) / (wavelength * f2) + theta * Phi
 
-doe1_phase = create_asymmetric_fzp(radius, wavelength, focal_length1, skew_factor1)
-doe2_phase = create_asymmetric_fzp(radius, wavelength, focal_length2, skew_factor2)
+# Adjust Phi1 to create the asymmetric profile similar to the provided image
+Phi1_asymmetric = (np.pi * (X**2 + 2*(Y - 0.005)**2)) / (wavelength * f1)
 
 # Rotate DOE 2
-doe2_rotated_phase = np.mod(doe2_phase + theta, 2 * np.pi)
+def rotate_phase(Phi, angle):
+    cos_angle = np.cos(angle)
+    sin_angle = np.sin(angle)
+    X_rot = cos_angle * X + sin_angle * Y
+    Y_rot = -sin_angle * X + cos_angle * Y
+    R_rot = np.sqrt(X_rot**2 + Y_rot**2)
+    return np.mod((np.pi * (2*X_rot**2 + Y_rot**2)) / (wavelength * f2), 2 * np.pi)
 
-# Combine the phases to form the Moiré pattern
-moire_phase = np.mod(doe1_phase + doe2_rotated_phase, 2 * np.pi)
+Phi2_rotated = rotate_phase(Phi2, theta)
 
-# Calculate the focal length of the combined Moiré lens
-def calculate_focal_length(wavelength, theta):
-    return wavelength / (2 * np.pi * theta)
+# Combined phase profile
+Phi_combined = np.mod(Phi1_asymmetric + Phi2_rotated, 2 * np.pi)
 
-moire_focal_length = calculate_focal_length(wavelength, theta)
-
-# Plotting the results
-plt.figure(figsize=(12, 4))
+# Plotting
+plt.figure(figsize=(18, 6))
 
 plt.subplot(1, 3, 1)
-plt.imshow(doe1_phase, cmap='gray')
-plt.title('Asymmetric DOE 1 Phase')
+plt.imshow(Phi1_asymmetric, extent=(-0.01, 0.01, -0.01, 0.01), cmap='gray')
+plt.title('DOE 1 Asymmetric Phase Profile')
 plt.colorbar()
 
 plt.subplot(1, 3, 2)
-plt.imshow(doe2_rotated_phase, cmap='gray')
-plt.title('Asymmetric DOE 2 Rotated Phase')
+plt.imshow(Phi2_rotated, extent=(-0.01, 0.01, -0.01, 0.01), cmap='gray')
+plt.title('DOE 2 Rotated Phase Profile')
 plt.colorbar()
 
 plt.subplot(1, 3, 3)
-plt.imshow(moire_phase, cmap='gray')
-plt.title(f'Moiré Pattern\nFocal Length: {moire_focal_length:.2e} m')
+plt.imshow(Phi_combined, extent=(-0.01, 0.01, -0.01, 0.01), cmap='gray')
+plt.title('Combined Phase Profile')
 plt.colorbar()
 
 plt.tight_layout()
