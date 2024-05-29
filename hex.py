@@ -56,4 +56,4 @@ def draw_hex_tiling(center_x=0, center_y=0, interval=10, size=5, angles=[0, 90],
     plt.show()
 
 # 예시: 중심을 (0, 0)으로 하고, 20 간격으로 각도 30도와 60도의 벌집 모양 육각형 그리기, 선 굵기 1.0
-draw_hex_tiling(center_x=0, center_y=0, interval=2, size=2, angles=[0,30], linewidth=1.0)
+draw_hex_tiling(center_x=0, center_y=0, interval=2, size=2, angles=[0,8], linewidth=1.0)
